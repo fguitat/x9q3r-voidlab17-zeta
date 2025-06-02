@@ -1,0 +1,5 @@
+com/mycompany/register/RegistroServlet.class
+com/mycompany/register/LoginServlet.class
+com/mycompany/register/ControladorServlet.class
+com/mycompany/register/resources/QRcrear.class
+com/mycompany/register/ControlFilter.class

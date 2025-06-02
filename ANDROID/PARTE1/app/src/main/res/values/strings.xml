@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Tfg</string>
+    <string name="client_cert_password">ÑaoPao</string>
+    <string name="client_cert_alias">Cliente Android</string>
+</resources>

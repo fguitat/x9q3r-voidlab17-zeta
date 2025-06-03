@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<!--
+Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Html.html to edit this template
+-->
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel de Administración</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+
+    h1, h2 {
+        color: #00ffff;
+        border-bottom: 1px solid #00ffff;
+        padding-bottom: 5px;
+    }
+
+    form {
+        margin: 20px 0;
+        padding: 20px;
+        background-color: #1f1f1f;
+        border-radius: 10px;
+        box-shadow: 0 0 10px #00ffff33;
+        max-width: 280px;
+    }
+
+    label {
+        display: block;
+        margin-top: 10px;
+        font-weight: 600;
+    }
+
+    .input-field-container {
+        width: 250px; 
+        margin-top: 5px;
+        position: relative;
+    }
+
+    input[type="text"], input[type="password"] {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box; 
+        background-color: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 5px;
+        color: #fff;
+        transition: border-color 0.3s ease;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #00ffff;
+        box-shadow: 0 0 5px #00ffff88;
+    }
+
+    button {
+        margin-top: 15px;
+        padding: 10px 20px;
+        background-color: #00bcd4;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #0097a7;
+    }
+
+    .toggle-password:hover {
+        color: #00bcd4;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: separate; 
+        border-spacing: 15px 10px; 
+        margin-top: 20px;
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    th, td {
+        padding: 12px 15px; 
+        background-color: #2a2a2a;
+        border-radius: 5px;
+    }
+
+    th {
+        background-color: #00bcd4;
+        color: #fff;
+        text-align: left;
+        font-weight: bold;
+    }
+
+    tr:hover td {
+        background-color: #3a3a3a; 
+    }
+
+    .select-estado {
+        width: 100%;
+        padding: 8px;
+        background-color: #3a3a3a;
+        color: #fff;
+        border: 1px solid #444;
+        border-radius: 5px;
+    }
+
+    .btn-eliminar {
+        padding: 8px 15px;
+        background-color: #d50000;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .btn-eliminar:hover {
+        background-color: #ff0000;
+    }
+</style>
+</head>
+<body>
+  <h1>Panel de Administración de Usuarios</h1>
+
+  <h2>Agregar Nuevo Usuario</h2>
+  <form id="formAgregar">
+    <div>
+      <label for="usuario">Usuario:</label>
+      <div class="input-field-container">
+        <input type="text" id="usuario" name="usuario" required />
+      </div>
+    </div>
+      
+    <div>
+      <label for="password">Contraseña:</label>
+      <div class="input-field-container">
+        <input type="password" id="password" name="password" required />
+      </div>
+    </div>
+    <button type="submit">Agregar Usuario</button>
+  </form>
+
+  <h2>Lista de Usuarios</h2>
+  <div id="usuarios">
+    <p>Cargando lista de usuarios...</p>
+  </div>
+
+    <script>
+        // Función para cargar los usuarios usando POST
+        function cargarUsuarios() {
+            fetch('/firstpage/UsuarioServlet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'accion=listar'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById("usuarios").innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error al cargar usuarios:', error);
+                document.getElementById("usuarios").innerHTML = 
+                    '<p style="color: red;">Error al cargar la lista de usuarios</p>';
+            });
+        }
+
+        // Cargar usuarios al iniciar
+        cargarUsuarios();
+        
+        
+        document.getElementById("formAgregar").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append("accion", "agregar");
+
+            fetch("/firstpage/UsuarioServlet", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(formData)
+            })
+            .then(response => {
+                if (response.status === 409) { // Usuario ya existe
+                    return response.text().then(text => ({ success: false, message: text }));
+                } else if(response.status===401){
+                    return response.json().then(data => {
+                        if (data.redirect) {
+                            window.top.location.href = data.redirect;
+                        }
+                    });
+                    
+                } else if (!response.ok) {
+                    throw new Error('Error en la solicitud');
+                }
+                return response.text().then(text => ({ success: true, message: text }));
+                
+            })
+            .then(({ success, message }) => {
+                alert(message);
+                if (success) {
+                    this.reset();
+                    cargarUsuarios();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'Error al procesar la solicitud');
+            });
+        });        
+        
+        function actualizarEstado(selectElement) {
+            const fila = selectElement.closest('tr');
+            const id = fila.getAttribute('data-id');
+            const nuevoEstado = selectElement.value;
+
+            fetch('/firstpage/UsuarioServlet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `accion=actualizarEstado&id=${id}&estado=${encodeURIComponent(nuevoEstado)}`
+            })
+            .then(response => {
+                if(response.status===401){
+                    return response.json().then(data => {
+                        if (data.redirect) {
+                            window.top.location.href = data.redirect;
+                        }
+                    });
+                    
+                }else if (!response.ok) {
+                    throw new Error('Error al actualizar');
+                }
+                return response.text();
+            })
+            .then(mensaje => {
+                mostrarNotificacion('Estado actualizado correctamente', 'success');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                selectElement.value = selectElement.getAttribute('data-valor-anterior');
+                mostrarNotificacion('Error al actualizar el estado', 'error');
+            });
+        }
+                // Función auxiliar para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo) {
+            const notificacion = document.createElement('div');
+            notificacion.className = `notificacion ${tipo}`;
+            notificacion.textContent = mensaje;
+            document.body.appendChild(notificacion);
+
+            setTimeout(() => {
+                notificacion.remove();
+            }, 3000);
+        }
+        
+        function eliminarUsuario(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
+                return;
+            }
+
+            fetch('/firstpage/UsuarioServlet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `accion=eliminar&id=${id}`
+            })
+            .then(response => {
+                if(response.status===401){
+                    return response.json().then(data => {
+                        if (data.redirect) {
+                            window.top.location.href = data.redirect;
+                        }
+                    });
+                    
+                }else if (!response.ok) {
+                    throw new Error('Error al eliminar');
+                }
+                return response.text();
+            })
+            .then(mensaje => {
+                console.log('Usuario eliminado:', mensaje);
+                mostrarNotificacion('Usuario eliminado correctamente', 'success');
+                // Recargar la lista de usuarios después de eliminar
+                cargarUsuarios();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al eliminar el usuario', 'error');
+            });
+        }    
+        
+        
+
+        // Al cargar la página, guardamos el estado inicial de cada select
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.select-estado').forEach(select => {
+                select.setAttribute('data-valor-anterior', select.value);
+            });
+        });
+    </script>
+</body>
+</html>
+

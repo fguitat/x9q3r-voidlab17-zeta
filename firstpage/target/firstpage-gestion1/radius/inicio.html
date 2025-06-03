@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #000000, #1a1a1a);
+            min-height: 100vh;
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        h1, h2 {
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7), 0 0 20px rgba(0, 255, 255, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        input[type="text"] {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        button {
+            background: linear-gradient(45deg, #00ffff, #00b7eb);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: #000000;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+        }
+
+        .notificacion {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            color: #ffffff;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideIn 0.5s ease;
+        }
+
+        .notificacion.success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .notificacion.error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        #usuarios {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        #usuarios table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        #usuarios th, #usuarios td {
+            padding: 10px 20px; 
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        }
+
+        #usuarios th {
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #00ffff;
+        }
+
+        #usuarios td button {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 640px) {
+            .form-container, #usuarios {
+                padding: 15px;
+            }
+
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+
+            #usuarios th, #usuarios td {
+                padding: 8px 10px; 
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="antialiased">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <h1 class="text-4xl font-bold text-center mb-8">Panel de Administración de Radius</h1>
+        
+        <h2 class="text-2xl font-semibold mb-4">Agregar Nuevo Servidor</h2>
+        <div class="form-container mb-8">
+            <form id="formAgregar" class="space-y-4">
+                <div>
+                    <label for="nombre" class="block text-sm font-medium mb-1">Nombre cliente:</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                </div>
+                <div>
+                    <label for="ip" class="block text-sm font-medium mb-1">IP cliente:</label>
+                    <input type="text" id="ip" name="ip" required>
+                </div>
+                <div>
+                    <label for="secreto" class="block text-sm font-medium mb-1">Secreto:</label>
+                    <input type="text" id="secreto" name="secreto" required>
+                </div>
+                <button type="submit">Agregar Servidor</button>
+            </form>
+        </div>
+
+        <h2 class="text-2xl font-semibold mb-4">Lista de Servidores</h2>
+        <div id="usuarios">
+            <p>Cargando lista de usuarios...</p>
+        </div>
+    </div>
+
+    <script>
+        // Función para cargar los usuarios usando POST
+        function cargarUsuarios() {
+            fetch('/firstpage/ClientesRadius', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'accion=listar'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById("usuarios").innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error al cargar usuarios:', error);
+                document.getElementById("usuarios").innerHTML = 
+                    '<p style="color: red;">Error al cargar la lista de usuarios</p>';
+            });
+        }
+        
+        // Cargar usuarios al iniciar
+        cargarUsuarios();
+        
+        function eliminarUsuario(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
+                return;
+            }
+
+            fetch('/firstpage/ClientesRadius', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `accion=eliminar&id=${id}`
+            })
+            .then(response => {
+                if(response.status===401){
+                    return response.json().then(data => {
+                        if (data.redirect) {
+                            window.top.location.href = data.redirect;
+                        }
+                    });
+                    
+                }else if (!response.ok) {
+                    throw new Error('Error al eliminar');
+                }
+                return response.text();
+            })
+            .then(mensaje => {
+                console.log('Usuario eliminado:', mensaje);
+                mostrarNotificacion('Usuario eliminado correctamente', 'success');
+                // Recargar la lista de usuarios después de eliminar
+                cargarUsuarios();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al eliminar el usuario', 'error');
+            });
+        }
+
+        document.getElementById("formAgregar").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append("accion", "agregar");
+
+            fetch("/firstpage/ClientesRadius", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(formData)
+            })
+            .then(response => {
+                if (response.status === 409) { // Usuario ya existe
+                    return response.text().then(text => ({ success: false, message: text }));
+                }else if(response.status===401){
+                    return response.json().then(data => {
+                        if (data.redirect) {
+                            window.top.location.href = data.redirect;
+                        }
+                    });    
+                }else if (!response.ok) {
+                    throw new Error('Error en la solicitud');
+                }
+                return response.text().then(text => ({ success: true, message: text }));
+            })
+            .then(({ success, message }) => {
+                alert(message);
+                if (success) {
+                    this.reset();
+                    cargarUsuarios();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'Error al procesar la solicitud');
+            });
+        });
+
+        // Función auxiliar para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo) {
+            const notificacion = document.createElement('div');
+            notificacion.className = `notificacion ${tipo}`;
+            notificacion.textContent = mensaje;
+            document.body.appendChild(notificacion);
+
+            setTimeout(() => {
+                notificacion.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

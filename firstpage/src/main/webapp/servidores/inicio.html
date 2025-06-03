@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<!--
+Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Html.html to edit this template
+-->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estado Servidores</title>
+    <style>
+        body {
+            background-color: #0e0e0e;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            color: #ff0000;
+            text-shadow: 2px 2px 10px #ff0000;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #ff0000;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -75%;
+            width: 50%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: skewX(-20deg);
+            transition: left 0.5s ease;
+        }
+
+        button:hover::before {
+            left: 125%;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px #ff0000, 0 0 10px #ffffff inset;
+        }
+
+        .verde {
+            background: linear-gradient(135deg, #00ff00, #007700);
+            color: #000;
+        }
+
+        .rojo {
+            background: linear-gradient(135deg, #ff0000, #770000);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Servidores</h1>
+    <div id="botones">
+        <button id="btn-radius">Iniciar Servidor RADIUS Y OTP</button><br>
+        <button id="btn-push">Iniciar Servidor Notificaciones Push</button>
+    </div>
+
+    <script>
+        // Función para actualizar los botones
+        function actualizarBotones(data) {
+            // Botón RADIUS
+            const btnRadius = document.getElementById("btn-radius");
+            if (data.radius) {
+                btnRadius.textContent = "Parar Servidor RADIUS Y OTP";
+                btnRadius.className = "rojo";
+            } else {
+                btnRadius.textContent = "Iniciar Servidor RADIUS Y OTP";
+                btnRadius.className = "verde";
+            }
+
+            // Botón Push
+            const btnPush = document.getElementById("btn-push");
+            if (data.push) {
+                btnPush.textContent = "Parar Servidor Notificaciones Push";
+                btnPush.className = "rojo";
+            } else {
+                btnPush.textContent = "Iniciar Servidor Notificaciones Push";
+                btnPush.className = "verde";
+            }
+        }
+
+        // Función que se ejecuta cuando la página se carga
+        window.onload = function() {
+            // Solicitar el estado de los servidores al servlet
+            fetch('/firstpage/EstadoServidoresServlet')
+                .then(response => response.json())
+                .then(data => {
+                    actualizarBotones(data);  // Actualiza los botones según el estado
+                })
+                .catch(error => {
+                    console.error('Error al obtener el estado:', error);
+                });
+        };
+
+        // Función para manejar el clic en los botones
+        function cambiarEstadoServidor(servidor) {
+            const estado = document.getElementById(`btn-${servidor}`).classList.contains('verde') ? true : false;
+
+            fetch('/firstpage/EstadoServidoresServlet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    servidor: servidor,
+                    estado: estado
+                })
+            })
+            .then(response => {
+                if(response.status===401){
+                    return response.json().then(data => {
+                        if (data.redirect) {
+                            window.top.location.href = data.redirect;
+                        }
+                    });
+                    
+                }
+                return response.json();
+            })    
+            .then(data => {
+                console.log("Lo qu se recibe es: ", data);
+                actualizarBotones(data);
+            })
+            .catch(error => {
+                console.error('Error al cambiar el estado del servidor:', error);
+            });
+        }
+
+        document.getElementById("btn-radius").addEventListener("click", () => cambiarEstadoServidor("radius"));
+        document.getElementById("btn-push").addEventListener("click", () => cambiarEstadoServidor("push"));
+    </script>
+</body>
+</html>

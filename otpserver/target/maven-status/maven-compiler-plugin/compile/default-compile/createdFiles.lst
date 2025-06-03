@@ -1,0 +1,7 @@
+com\mycompany\otpserver\LoginServlet.class
+com\mycompany\otpserver\NoSalirFilter.class
+com\mycompany\otpserver\LogoutServlet.class
+com\mycompany\otpserver\NoSalir2Filter.class
+com\mycompany\otpserver\ValidacionOTPServlet.class
+com\mycompany\otpserver\PaginaAdmServlet.class
+com\mycompany\otpserver\PaginaAdmFilter.class
